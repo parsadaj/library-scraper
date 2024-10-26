@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import os
 import json
+import time
 
 # Base URL of the library listings
 base_url = "https://lib.ir/fa/libraries/p"
@@ -19,8 +20,17 @@ def get_number_of_pages():
     return total_pages
 
 # Function to scrape library details
-def scrape_library_details(library_url):
-    response = requests.get(library_url)
+def scrape_library_details(library_url, page_number, lib_number):
+    while True:
+        response = requests.get(library_url)
+        if response.status_code == 200:
+            break
+        elif response.status_code == 500:
+            print(f"Retrying request for library: {lib_number+1} in page {page_number}...")
+            time.sleep(2)
+        else:
+            raise
+
     soup = BeautifulSoup(response.content, 'html.parser')
 
     # Extract the necessary information
@@ -36,13 +46,12 @@ def scrape_library_details(library_url):
             break
     
     phone_number = soup.find_all('div', class_='libinfo')[0].find_all('div')[2].text.strip() if soup.find_all('div', class_='libinfo') and len(soup.find_all('div', class_='libinfo')[0].find_all('div')) > 2 else 'N/A'
-    address = soup.find_all('div', class_='libinfo')[1].find_all('div')[3].text.strip() if soup.find_all('div', class_='libinfo') and len(soup.find_all('div', class_='libinfo')[1].find_all('div')) > 3 else 'N/A'
+    address = soup.find_all('div', class_='libinfo')[2].find_all('div')[3].text.strip() if soup.find_all('div', class_='libinfo') and len(soup.find_all('div', class_='libinfo')[1].find_all('div')) > 3 else 'N/A'
     
     province, city = None, None
     if location != 'N/A':
-        province, city = location.split('ـ')
-        province = province.split(':')[1].strip() if ':' in province else province
-        city = city.split(':')[1].strip() if ':' in city else city
+        province = location.split('شهر:')[0].strip().split('استان:')[1].strip()[:-1].strip()
+        city = location.split('شهر:')[1].strip()
 
     return {
         'province': province if province else 'N/A',
@@ -62,13 +71,13 @@ def scrape_libraries(page_number):
     if table:
         rows = table.find_all('tr')[1:]  # Skip the header row
 
-        for row in rows:
+        for lib_number, row in enumerate(rows):
             columns = row.find_all('td')
             if columns:
                 library_name = columns[1].find('a').text.strip()
-                library_link = columns[1].find('a')['href']
-                print(f"Scraping details for library: {library_name}...")
-                library_info = scrape_library_details(library_link)
+                library_link = "https://lib.ir" + columns[1].find('a')['href']
+                print(f"Scraping details for library: {lib_number+1} in page {page_number}...")
+                library_info = scrape_library_details(library_link, page_number, lib_number)
                 libraries.append({
                     'name': library_name,
                     **library_info
