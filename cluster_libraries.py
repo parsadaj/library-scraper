@@ -3,10 +3,10 @@ import os
 
 # Define new column names
 new_column_names = {
-    'name': 'Library Name',
-    'province': 'Province',
+    'name': 'Name',
+    'province': 'Prov.',
     'city': 'City',
-    'address': 'Address                                                             ',
+    'address': 'Address',
     'phone_number': 'Phone No.',
     'website': 'Website'
 }
@@ -21,8 +21,21 @@ if not os.path.exists(results_path):
 def create_readme(city_path, city_df):
     readme_path = os.path.join(city_path, 'README.md')
 
-    pass
-    
+        # Rename columns to new names
+    city_df.rename(columns=new_column_names, inplace=True)
+
+    # Make the library name a hyperlink to the website
+    def make_hyperlink(row):
+        if row['Website'] != 'N/A':
+            return f"[{row['Name']}]({row['Website']})"
+        else:
+            return row['Name']
+
+    city_df['Name'] = city_df.apply(make_hyperlink, axis=1)
+
+    # Drop the website column
+    city_df = city_df.drop(columns=['Website', 'Phone No.', 'Prov.', 'City'])
+            
     with open(readme_path, 'w', encoding='utf-8') as f:
         f.write(city_df.to_markdown(index=False))
     print(f"Created {readme_path}")
@@ -45,9 +58,6 @@ for province in df['province'].unique():
         if not os.path.exists(city_path):
             os.makedirs(city_path)
         
-                # Rename columns to new names
-        city_df.rename(columns=new_column_names, inplace=True)
-
         # Create a CSV file for the city within the city directory
         city_file_path = os.path.join(city_path, f"{city}.csv")
         city_df.to_csv(city_file_path, index=False)
