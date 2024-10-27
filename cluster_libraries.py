@@ -8,7 +8,8 @@ new_column_names = {
     'city': 'City',
     'address': 'Address',
     'phone_number': 'Phone No.',
-    'website': 'Website'
+    'website': 'Website',
+    'url': 'url'
 }
 
 # Read the original CSV file
@@ -26,15 +27,15 @@ def create_readme(city_path, city_df):
 
     # Make the library name a hyperlink to the website
     def make_hyperlink(row):
-        if row['Website'] != 'N/A':
-            return f"[{row['Name']}]({row['Website']})"
+        if row['url'] != 'N/A':
+            return f"[{row['Name']}]({row['url']})"
         else:
             return row['Name']
 
     city_df['Name'] = city_df.apply(make_hyperlink, axis=1)
 
     # Drop the website column
-    city_df = city_df.drop(columns=['Website', 'Phone No.', 'Prov.', 'City'])
+    city_df = city_df.drop(columns=['Website', 'Phone No.', 'Prov.', 'City', 'url'])
             
     with open(readme_path, 'w', encoding='utf-8') as f:
         f.write(city_df.to_markdown(index=False))

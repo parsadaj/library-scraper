@@ -9,9 +9,32 @@ import time
 base_url = "https://lib.ir/fa/libraries/p"
 libraries = []
 
+def send_request(url, msg):
+    while True:
+        tried = 0
+        try:
+            response = requests.get(url)
+        except Exception as e:
+            tried += 1
+            if tried < 15:
+                print(e)
+                print(msg)
+                time.sleep(2)
+                continue
+            else:
+                raise e
+        if response.status_code == 200:
+            return response
+        elif response.status_code == 500:
+            print(msg)
+            time.sleep(2)
+        else:
+            raise
+    
+
 # Function to get the number of pages
 def get_number_of_pages():
-    response = requests.get(f"{base_url}1/")
+    response = send_request(f"{base_url}1/", msg="Retrying retrieveing number of pages...")
     soup = BeautifulSoup(response.content, 'html.parser')
     pagination = soup.find('ul', class_='pagination')
     last_page_link = pagination.find_all('a')[0]['href']
@@ -21,15 +44,8 @@ def get_number_of_pages():
 
 # Function to scrape library details
 def scrape_library_details(library_url, page_number, lib_number):
-    while True:
-        response = requests.get(library_url)
-        if response.status_code == 200:
-            break
-        elif response.status_code == 500:
-            print(f"Retrying request for library: {lib_number+1} in page {page_number}...")
-            time.sleep(2)
-        else:
-            raise
+    response = send_request(library_url, msg=f"Retrying request for library: {lib_number+1} in page {page_number}...")
+
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -59,12 +75,13 @@ def scrape_library_details(library_url, page_number, lib_number):
         'address': address[7:].strip(),
         'phone_number': phone_number[11:].strip(),
         'website': website,
+        'url':library_url
     }
 
 # Function to scrape libraries from the list pages
 def scrape_libraries(page_number):
     print(f"Scraping page {page_number}...")
-    response = requests.get(f"{base_url}{page_number}/")
+    response = send_request(f"{base_url}{page_number}/", msg=f"Retrying request for page {page_number}...")
     soup = BeautifulSoup(response.content, 'html.parser')
     
     table = soup.find('div', class_='table-responsive')
