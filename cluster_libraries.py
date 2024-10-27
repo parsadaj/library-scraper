@@ -1,6 +1,16 @@
 import pandas as pd
 import os
 
+# Define new column names
+new_column_names = {
+    'name': 'Library Name',
+    'province': 'Province',
+    'city': 'City',
+    'address': 'Address                                                             ',
+    'phone_number': 'Phone No.',
+    'website': 'Website'
+}
+
 # Read the original CSV file
 df = pd.read_csv('libraries.csv')
 results_path = 'results'
@@ -10,6 +20,9 @@ if not os.path.exists(results_path):
 # Function to create a README.md file with a table of library data
 def create_readme(city_path, city_df):
     readme_path = os.path.join(city_path, 'README.md')
+
+    pass
+    
     with open(readme_path, 'w', encoding='utf-8') as f:
         f.write(city_df.to_markdown(index=False))
     print(f"Created {readme_path}")
@@ -32,6 +45,9 @@ for province in df['province'].unique():
         if not os.path.exists(city_path):
             os.makedirs(city_path)
         
+                # Rename columns to new names
+        city_df.rename(columns=new_column_names, inplace=True)
+
         # Create a CSV file for the city within the city directory
         city_file_path = os.path.join(city_path, f"{city}.csv")
         city_df.to_csv(city_file_path, index=False)
